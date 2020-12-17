@@ -2,6 +2,8 @@
 #include "CClient.h"
 #include "CMonster.h"
 CMonster g_Monsters[MAX_MONSTER];
+CClient g_clients[MAX_USER + NUM_NPC + MAX_MONSTER];
+
 void CClient::LevelUP()
 {
 	m_slevel++;
@@ -23,25 +25,26 @@ bool CClient::is_near(int monsterID)
 
 void CClient::Attack(int monsterID)
 {
-	if (is_near(monsterID))
-	{
-		g_Monsters[monsterID].MinusHP(m_sAttack_Damage);
+	cout << "Á¶ ÆÐ »Ô¶ó" << endl;
+		g_clients[monsterID].MinusHP(m_sAttack_Damage);
 		
-		if (g_Monsters[monsterID].GetHP() <= 0)
+		if (g_clients[monsterID].GetHP() <= 0)
 		{
 			Kill_Monster(monsterID);
 		}
-	}
 }
 
 void CClient::Kill_Monster(int monsterID)
 {
+	cout << "¾Ó Á×¾ú¶ì" << endl;
 	m_iexp += 20;
 
 	if (m_iexp >= m_iMax_exp)
 	{
 		LevelUP();
 	}
+
+	g_clients[monsterID].m_status = ST_ALLOC;
 }
 
 void CClient::Player_Die()
@@ -50,6 +53,11 @@ void CClient::Player_Die()
 	m_iexp /= 2;
 	x = 67;
 	y = 41;
+}
+
+void CClient::MinusHP(int damage)
+{
+	m_shp -= damage;
 }
 
 

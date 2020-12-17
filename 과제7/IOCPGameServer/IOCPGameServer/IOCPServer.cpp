@@ -6,7 +6,7 @@
 
 
 
-CClient g_clients[MAX_USER + NUM_NPC + MAX_MONSTER];
+
 //CMonster g_Monsters[MAX_MONSTER];
 CDataBase g_DataBase;
 
@@ -367,6 +367,18 @@ void random_move_monster(int id)
     }
 }
 
+void do_attack(int user_id)
+{
+    // 근처 한칸에 있는 몬스터인가?
+    for (int i = NUM_NPC + MAX_USER; i < NUM_NPC + MAX_USER + MAX_MONSTER;++i)
+    {
+        if (is_near_Monster(user_id, i))
+        {
+            g_clients[i].Attack(i);
+        }
+    }
+}
+
 void do_move(int user_id, int direction)
 {
     CClient& u = g_clients[user_id];
@@ -694,6 +706,7 @@ void process_packet(int user_id, char* buf)
     case CS_ATTACK:
     {
         cs_packet_attack* packet = reinterpret_cast<cs_packet_attack*>(buf);
+        do_attack(user_id);
     }
     break;
     default:
@@ -718,7 +731,6 @@ void disconnect(int user_id)
     g_clients[user_id].m_status = ST_ALLOC;
 
     send_leave_packet(user_id, user_id);
-
 
     g_clients[user_id].m_cl.lock();
     for (int i = 0; i < MAX_USER; ++i)
@@ -997,12 +1009,16 @@ int API_SetPos(lua_State* L)
 
 void initialize_Monster()
 {
-    for (int i = MAX_USER + NUM_NPC; i < MAX_USER + NUM_NPC + MAX_MONSTER; ++i)
+    for (int type = 0; type < 4; ++type)
     {
-        g_clients[i].x = rand() % WORLD_WIDTH;
-        g_clients[i].y = rand() % WORLD_HEIGHT;
-        g_clients[i].m_id = i;
-        g_clients[i].m_status = ST_SLEEP;
+        for (int i = MAX_USER + NUM_NPC; i < MAX_USER + NUM_NPC + (DIVIDE_MONNSTER * (type+1)); ++i)
+        {
+            g_clients[i].x = rand() % WORLD_WIDTH;
+            g_clients[i].y = rand() % WORLD_HEIGHT;
+            g_clients[i].m_id = i;
+            g_clients[i].m_status = ST_SLEEP;
+            g_clients[i].m_Monster_level = i;
+        }
     }
 }
 

@@ -178,8 +178,18 @@ void ProcessPacket(char* ptr)
 				npcs[id] = OBJECT{ *pieces, 64 * 2, 0, 64, 64 };
 			else if (id >= NUM_NPC && id < MAX_USER + NUM_NPC)
 				npcs[id] = OBJECT{ *pieces, 0, 0, 64, 64 };
-			else 
-				npcs[id] = OBJECT{ *pieces, 64, 64, 64, 64 };
+			else if ((id >= MAX_USER + NUM_NPC && id < MAX_USER + NUM_NPC + MAX_MONSTER))
+			{
+		
+				for (int i = 0; i < 4; ++i)
+				{
+					cout << "ID -> " << id << endl;
+					if (id < MAX_USER + NUM_NPC+DIVIDE_MONNSTER * (i+1)
+						&& id>= MAX_USER + NUM_NPC + DIVIDE_MONNSTER * i
+						)
+						npcs[id] = OBJECT{ *pieces, 64*i, 64, 64, 64 };
+				}
+			}
 
 			strcpy_s(npcs[id].name, my_packet->name);
 			npcs[id].set_name(my_packet->name);

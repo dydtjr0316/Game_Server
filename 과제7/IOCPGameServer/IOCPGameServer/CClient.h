@@ -11,6 +11,10 @@ public:
 	void Kill_Monster(int monsterID);
 
 	void Player_Die();
+	void MinusHP(int damage);
+
+	short GetAttackDamage() { return m_sAttack_Damage; };
+	short GetHP() { return m_shp; }
 
 public: // 새로 추가 1216
 	short m_shp = 100;
@@ -32,6 +36,7 @@ public:
 	int		m_id;
 	int   m_prev_size;
 	int m_iclinet_time;
+	short m_Monster_level = 1;
 	// short
 	short x, y;
 	// char
