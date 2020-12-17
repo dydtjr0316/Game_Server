@@ -1,0 +1,89 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="00Main">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="98LUA">
+      <UniqueIdentifier>{018c32b4-5f64-4e87-97ca-497d6c0e957f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="98LUA\98-1 luafile">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="99.Etc">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="01CClient">
+      <UniqueIdentifier>{c7f37252-5a57-415e-a83d-5c4947a82b98}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="02MONSTER">
+      <UniqueIdentifier>{a6e5a5b0-bff7-44a6-8aee-fba7335b73f2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="03DataBase">
+      <UniqueIdentifier>{0e96896a-13f2-4278-9d36-c0522213a953}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="protocol.h">
+      <Filter>99.Etc</Filter>
+    </ClInclude>
+    <ClInclude Include="include\lauxlib.h">
+      <Filter>98LUA</Filter>
+    </ClInclude>
+    <ClInclude Include="include\lua.h">
+      <Filter>98LUA</Filter>
+    </ClInclude>
+    <ClInclude Include="include\lua.hpp">
+      <Filter>98LUA</Filter>
+    </ClInclude>
+    <ClInclude Include="include\luaconf.h">
+      <Filter>98LUA</Filter>
+    </ClInclude>
+    <ClInclude Include="include\lualib.h">
+      <Filter>98LUA</Filter>
+    </ClInclude>
+    <ClInclude Include="stdafx.h">
+      <Filter>99.Etc</Filter>
+    </ClInclude>
+    <ClInclude Include="enum.h">
+      <Filter>99.Etc</Filter>
+    </ClInclude>
+    <ClInclude Include="CClient.h">
+      <Filter>01CClient</Filter>
+    </ClInclude>
+    <ClInclude Include="struct.h">
+      <Filter>99.Etc</Filter>
+    </ClInclude>
+    <ClInclude Include="Global.h">
+      <Filter>99.Etc</Filter>
+    </ClInclude>
+    <ClInclude Include="CDataBase.h">
+      <Filter>03DataBase</Filter>
+    </ClInclude>
+    <ClInclude Include="CMonster.h">
+      <Filter>02MONSTER</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="IOCPServer.cpp">
+      <Filter>00Main</Filter>
+    </ClCompile>
+    <ClCompile Include="CClient.cpp">
+      <Filter>01CClient</Filter>
+    </ClCompile>
+    <ClCompile Include="CDataBase.cpp">
+      <Filter>03DataBase</Filter>
+    </ClCompile>
+    <ClCompile Include="CMonster.cpp">
+      <Filter>02MONSTER</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="monster.lua">
+      <Filter>98LUA\98-1 luafile</Filter>
+    </None>
+  </ItemGroup>
+</Project>
