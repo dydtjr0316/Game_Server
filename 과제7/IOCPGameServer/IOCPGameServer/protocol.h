@@ -15,15 +15,16 @@ constexpr auto MAX_BUF_SIZE = 1024;
 
 constexpr int SERVER_PORT = 3500;
 constexpr int MAX_ID_LEN = 10;
-constexpr int MAX_USER = 1000;
+constexpr int MAX_USER = 3000;
 constexpr int MAX_MONSTER = 5000;
 constexpr int DIVIDE_MONNSTER = MAX_MONSTER / 4;
 constexpr int WORLD_WIDTH = 800;
 constexpr int WORLD_HEIGHT = 800;
 constexpr int MAX_STR_LEN = 100;
+
 constexpr int VIEW_LIMIT = 7;				// 시야 반지름, 상대방과 사이에 6개의 타일이 있어도 보여야 함.
 
-constexpr int NUM_NPC = 1000;
+constexpr int NUM_NPC = 5000;
 
 #pragma pack (push, 1)
 
@@ -39,6 +40,8 @@ constexpr char SC_PACKET_LEAVE = 3;
 constexpr char SC_PACKET_CHAT = 4;
 constexpr char SC_PACKET_LOGIN_FAIL = 5;
 constexpr char SC_PACKET_STAT_CHANGE = 6;
+constexpr char SC_PACKET_ATTACK = 7;
+constexpr char SC_PACKET_LEVEL_UP = 8;
 
 constexpr char CS_LOGIN = 0;
 constexpr char CS_MOVE = 1;
@@ -86,6 +89,26 @@ struct sc_packet_leave {
 	char size;
 	char type;
 	int  id;
+};
+
+struct sc_packet_attack {
+	char size;
+	char type;
+	int  id;
+
+	short hp;
+};
+
+struct sc_packet_level_up {
+	char size;
+	char type;
+	int  id;
+
+	short hp;
+	short level;
+	int   exp;
+	int max_exp;
+	short attack_damage;
 };
 
 struct sc_packet_chat {

@@ -16,8 +16,8 @@ int hole_y[] = { 3,12,24,32,49,51,65,77,83,94,5,6,7,8,9,10,11,12,13,14,15 };
 
 sf::TcpSocket g_socket;
 
-constexpr auto SCREEN_WIDTH = 16;
-constexpr auto SCREEN_HEIGHT = 16;
+constexpr auto SCREEN_WIDTH = 20;
+constexpr auto SCREEN_HEIGHT = 20;
 
 constexpr auto TILE_WIDTH = 65;
 constexpr auto WINDOW_WIDTH = TILE_WIDTH * SCREEN_WIDTH / 2 + 10;   // size of window
@@ -27,6 +27,11 @@ constexpr auto BUF_SIZE = 200;
 
 // 추후 확장용.
 int NPC_ID_START = 1000;
+
+bool message = false;
+bool attacked = false;
+int messagetime = 0;
+int attack_m_id = 0;
 
 int g_left_x;
 int g_top_y;
@@ -47,6 +52,14 @@ private:
 
 public:
 	int m_x, m_y;
+	short hp;
+	short level;
+	int   exp;
+
+	int	  iMax_exp;
+	short	  sHp_Regen;
+	short Attack_Damage;
+
 	char name[MAX_ID_LEN];
 	OBJECT(sf::Texture& t, int x, int y, int x2, int y2) {
 		m_showing = false;
@@ -80,6 +93,19 @@ public:
 		m_y = y;
 	}
 	void draw() {
+		if (false == m_showing) return;
+		float rx = (m_x - g_left_x) * 65.0f + 8;
+		float ry = (m_y - g_top_y) * 65.0f + 8;
+		m_sprite.setPosition(rx, ry);
+		g_window->draw(m_sprite);
+		m_name.setPosition(rx - 10, ry - 10);
+		g_window->draw(m_name);
+		if (high_resolution_clock::now() < m_time_out) {
+			m_text.setPosition(rx - 10, ry + 20);
+			g_window->draw(m_text);
+		}
+	}
+	void State_draw() {
 		if (false == m_showing) return;
 		float rx = (m_x - g_left_x) * 65.0f + 8;
 		float ry = (m_y - g_top_y) * 65.0f + 8;
@@ -159,6 +185,16 @@ void ProcessPacket(char* ptr)
 		g_left_x = my_packet->x - (SCREEN_WIDTH / 2);
 		g_top_y = my_packet->y - (SCREEN_HEIGHT / 2);
 		avatar.show();
+
+		npcs[g_myid].hp = my_packet->hp;
+		npcs[g_myid].level = my_packet->level;
+		npcs[g_myid].exp = my_packet->exp;
+			 
+		npcs[g_myid].iMax_exp = my_packet->iMax_exp;
+		npcs[g_myid].sHp_Regen = my_packet->sHp_Regen;
+		npcs[g_myid].Attack_Damage = my_packet->Attack_Damage;
+
+
 	}
 	break;
 
@@ -200,7 +236,6 @@ void ProcessPacket(char* ptr)
 	break;
 	case SC_PACKET_MOVE:
 	{ 
-		cout << "move sign" << endl;
 		sc_packet_move* my_packet = reinterpret_cast<sc_packet_move*>(ptr);
 		int other_id = my_packet->id;
 		if (other_id == g_myid) {
@@ -233,16 +268,60 @@ void ProcessPacket(char* ptr)
 	{
 		sc_packet_chat* my_packet = reinterpret_cast<sc_packet_chat*>(ptr);
 
-		
-		cout << "받은 메세지 -> "<<my_packet->message<< endl;
 
 		char* temp = reinterpret_cast<char*>(my_packet->message);
 
-		cout << "변환 받은 메세지 -> " << temp << endl;
 
 		npcs[my_packet->id].add_chat(temp);
 	}
 		break;
+
+	case SC_PACKET_ATTACK:
+	{
+		cout << "어택 패킷 받음" << endl;
+
+		sc_packet_attack* p = reinterpret_cast<sc_packet_attack*>(ptr);
+		if (p->id == g_myid)
+		{
+			npcs[p->id].hp = p->hp;
+			attacked = true;
+		}
+		else {
+			if (0 != npcs.count(p->id))
+			{
+				npcs[p->id].hp = p->hp;
+				attacked = false;
+			}
+		}
+		attack_m_id = p->id;
+		message = true;
+
+	}
+	break;
+	case SC_PACKET_LEVEL_UP:
+	{
+ 		cout << "레벨업 패킷 받음" << endl;
+		sc_packet_level_up* p = reinterpret_cast<sc_packet_level_up*>(ptr);
+		if (p->id == g_myid)
+		{
+			npcs[p->id].hp = p->hp;
+			npcs[p->id].level = p->level;
+			npcs[p->id].exp = p->exp;
+			npcs[p->id].iMax_exp = p->max_exp;
+			npcs[p->id].Attack_Damage = p->attack_damage;
+		}
+		else {
+			if (0 != npcs.count(p->id))
+			{
+				npcs[p->id].hp = p->hp;
+				npcs[p->id].level = p->level;
+				npcs[p->id].exp = p->exp;
+				npcs[p->id].iMax_exp = p->max_exp;
+				npcs[p->id].Attack_Damage = p->attack_damage;
+			}
+		}
+	}
+	break;
 	default:
 		printf("Unknown PACKET type [%d]\n", ptr[1]);
 
@@ -341,13 +420,42 @@ void client_main()
 	avatar.draw();
 	//	for (auto &pl : players) pl.draw();
 	for (auto& npc : npcs) npc.second.draw();
+
 	sf::Text text;
 	text.setFont(g_font);
 	char buf[100];
-	sprintf_s(buf, "(%d, %d)", avatar.m_x, avatar.m_y);
+	sprintf_s(buf, "LEVEL : %d   HP : %d   POS : (%d, %d)", npcs[g_myid].level, npcs[g_myid].hp, avatar.m_x, avatar.m_y);
 	text.setString(buf);
+	text.setCharacterSize(40);
+	text.setStyle(sf::Text::Bold||sf::Text::Underlined);
+	//text.setPosition(100, 100);
+	text.setFillColor(sf::Color::Magenta);
 	g_window->draw(text);
 
+	if (message) {
+		sf::Text text1;
+		text1.setFont(g_font);
+		char buf1[100];
+		if(attacked)
+			sprintf_s(buf1, "Monster %d attack Player.", attack_m_id);
+		else
+			sprintf_s(buf1, "Player attack Monster %d.", attack_m_id);
+
+		text1.setString(buf1);
+		text1.setCharacterSize(40);
+		text1.setStyle(sf::Text::Bold || sf::Text::Underlined);
+		text1.setPosition(100, 100);
+		text1.setFillColor(sf::Color::Magenta);
+		g_window->draw(text1);
+
+		messagetime++;
+
+		if (messagetime > 1000)
+		{
+			message = false;
+			messagetime = 0;
+		}
+	}
 }
 
 void send_packet(void* packet)
@@ -440,6 +548,9 @@ int main()
 
 		window.clear();
 		client_main();
+
+
+
 		window.display();
 	}
 	client_finish();

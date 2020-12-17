@@ -6,13 +6,15 @@ CClient g_clients[MAX_USER + NUM_NPC + MAX_MONSTER];
 
 void CClient::LevelUP()
 {
-	m_slevel++;
+   	m_slevel++;
 	
 	m_iexp = 0;
 	m_iMax_exp *= 2;
 	m_shp += 10;
 
 	m_sAttack_Damage += 2;
+
+	m_bisLevelUp = true;
 }
 
 bool CClient::is_near(int monsterID)
@@ -25,34 +27,45 @@ bool CClient::is_near(int monsterID)
 
 void CClient::Attack(int monsterID)
 {
-	cout << "Á¶ ÆÐ »Ô¶ó" << endl;
+	if (g_clients[monsterID].m_shp > 0) {
+		//cout << "Á¶ ÆÐ »Ô¶ó" << endl;
+		//cout << g_clients[monsterID].m_shp << endl;
 		g_clients[monsterID].MinusHP(m_sAttack_Damage);
-		
+
 		if (g_clients[monsterID].GetHP() <= 0)
 		{
+			m_bisLevelUp = true;
 			Kill_Monster(monsterID);
 		}
+	}
 }
 
 void CClient::Kill_Monster(int monsterID)
 {
-	cout << "¾Ó Á×¾ú¶ì" << endl;
-	m_iexp += g_clients[monsterID].m_monster_exp;
-
-	if (m_iexp >= m_iMax_exp)
+	if (monsterID < MAX_USER)
 	{
-		LevelUP();
+		Player_Die(monsterID);
 	}
 
-	g_clients[monsterID].m_status = ST_ALLOC;
+	else {
+		//cout << "¾Ó Á×¾ú¶ì" << endl;
+		m_iexp += g_clients[monsterID].m_monster_exp;
+
+		if (m_iexp >= m_iMax_exp)
+		{
+			LevelUP();
+		}
+
+		g_clients[monsterID].m_status = ST_ALLOC;
+	}
 }
 
-void CClient::Player_Die()
+void CClient::Player_Die(int monsterID)
 {
-	m_shp = 100 + m_slevel * 10;
-	m_iexp /= 2;
-	x = 67;
-	y = 41;
+	g_clients[monsterID].m_shp = 100 + m_slevel * 10;
+	g_clients[monsterID].m_iexp /= 2;
+	g_clients[monsterID].x = g_clients[monsterID].m_iFirstX;
+	g_clients[monsterID].y = g_clients[monsterID].m_iFirstY;
 }
 
 void CClient::MinusHP(int damage)

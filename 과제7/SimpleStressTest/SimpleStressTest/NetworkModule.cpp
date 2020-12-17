@@ -22,7 +22,7 @@ extern HWND		hWnd;
 const static int MAX_TEST = 10000;
 const static int MAX_CLIENTS = MAX_TEST * 2;
 const static int INVALID_ID = -1;
-const static int MAX_PACKET_SIZE = 255;
+//const static int MAX_PACKET_SIZE = 255;
 const static int MAX_BUFF_SIZE = 255;
 
 #pragma comment (lib, "ws2_32.lib")
@@ -128,7 +128,7 @@ void SendPacket(int cl, void* packet)
 void ProcessPacket(int ci, unsigned char packet[])
 {
 	switch (packet[1]) {
-	case S2C_MOVE: {
+	case SC_PACKET_MOVE: {
 		sc_packet_move* move_packet = reinterpret_cast<sc_packet_move*>(packet);
 		if (move_packet->id < MAX_CLIENTS) {
 			int my_id = client_map[move_packet->id];
@@ -147,10 +147,10 @@ void ProcessPacket(int ci, unsigned char packet[])
 		}
 	}
 			   break;
-	case S2C_ENTER: break;
-	case S2C_LEAVE: break;
-	case S2C_CHAT: break;
-	case S2C_LOGIN_OK:
+	case SC_PACKET_ENTER: break;
+	case SC_PACKET_LEAVE: break;
+	case SC_PACKET_CHAT: break;
+	case SC_PACKET_LOGIN_OK:
 	{
 		g_clients[ci].connected = true;
 		active_clients++;
@@ -167,8 +167,9 @@ void ProcessPacket(int ci, unsigned char packet[])
 		//SendPacket(my_id, &t_packet);
 	}
 	break;
-	default: MessageBox(hWnd, L"Unknown Packet Type", L"ERROR", 0);
-		while (true);
+	default:/* MessageBox(hWnd, L"Unknown Packet Type", L"ERROR", 0);
+		while (true);*/
+		break;
 	}
 }
 
@@ -322,7 +323,7 @@ void Adjust_Number_Of_Client()
 	int temp = num_connections;
 	sprintf_s(l_packet.name, "%d", temp);
 	l_packet.size = sizeof(l_packet);
-	l_packet.type = C2S_LOGIN;
+	l_packet.type = CS_LOGIN;
 	SendPacket(num_connections, &l_packet);
 
 	int ret = WSARecv(g_clients[num_connections].client_socket, &g_clients[num_connections].recv_over.wsabuf, 1,
@@ -357,12 +358,12 @@ void Test_Thread()
 			g_clients[i].last_move_time = high_resolution_clock::now();
 			cs_packet_move my_packet;
 			my_packet.size = sizeof(my_packet);
-			my_packet.type = C2S_MOVE;
+			my_packet.type = CS_MOVE;
 			switch (rand() % 4) {
-			case 0: my_packet.direction = D_UP; break;
-			case 1: my_packet.direction = D_DOWN; break;
-			case 2: my_packet.direction = D_LEFT; break;
-			case 3: my_packet.direction = D_RIGHT; break;
+			case 0: my_packet.direction = MV_UP; break;
+			case 1: my_packet.direction = MV_DOWN; break;
+			case 2: my_packet.direction = MV_LEFT; break;
+			case 3: my_packet.direction = MV_RIGHT; break;
 			}
 			my_packet.move_time = static_cast<unsigned>(duration_cast<milliseconds>(high_resolution_clock::now().time_since_epoch()).count());
 			SendPacket(i, &my_packet);

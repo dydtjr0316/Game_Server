@@ -10,7 +10,7 @@ public:
 	void Attack(int monsterID);
 	void Kill_Monster(int monsterID);
 
-	void Player_Die();
+	void Player_Die(int monsterID);
 	void MinusHP(int damage);
 
 	short GetAttackDamage() { return m_sAttack_Damage; };
@@ -20,11 +20,16 @@ public: // 새로 추가 1216
 	short m_shp = 100;
 	short m_slevel = 1;
 	int   m_iexp = 0;
+	bool m_bisLevelUp = false;
 
 	int	  m_iMax_exp = 100;
 	short m_sHp_Regen = (m_shp/10); // 체젠
 	short m_sAttack_Damage = 5;
 	short m_monster_exp = 2;
+	bool m_isFighter = false;
+	short m_Monster_level =0 ;
+	int m_iFirstX;
+	int m_iFirstY;
 
 public:
 	// server
@@ -37,7 +42,6 @@ public:
 	int		m_id;
 	int   m_prev_size;
 	int m_iclinet_time;
-	short m_Monster_level =0 ;
 	// short
 	short x, y;
 	// char

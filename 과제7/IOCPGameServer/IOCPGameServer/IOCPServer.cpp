@@ -54,7 +54,9 @@ void timer_worker()
             {
                 event_type ev = timer_queue.top();
                 if (ev.wakeup_time > system_clock::now())break;
+                timer_lock.lock();
                 timer_queue.pop();
+                timer_lock.unlock();
 
                 if (ev.event_id == OP_RANDOM)
                 {
@@ -138,7 +140,7 @@ bool is_near_Monster(int p1, int p2)
 {
     int dist = (g_clients[p1].x - g_clients[p2].x) * (g_clients[p1].x - g_clients[p2].x);
     dist += (g_clients[p1].y - g_clients[p2].y) * (g_clients[p1].y - g_clients[p2].y);
-    return dist <= (2 * 2);
+    return dist <= (1);
 }
 bool is_near(int p1, int p2)
 {
@@ -178,6 +180,34 @@ void send_chat_packet(int to_client, int id, char* mess, size_t size)
     strcpy_s(p.message, mess);
 
     send_packet(to_client, &p);
+}
+
+void send_level_up_packet(int user_id)
+{
+    sc_packet_level_up p;
+    p.id = user_id;
+    p.size = sizeof(sc_packet_level_up);
+    p.type = SC_PACKET_LEVEL_UP;
+
+    p.hp = g_clients[user_id].m_shp;
+    p.attack_damage = g_clients[user_id].m_sAttack_Damage;
+    p.exp = g_clients[user_id].m_iexp;
+    p.level = g_clients[user_id].m_slevel;
+    p.max_exp = g_clients[user_id].m_iMax_exp;
+
+    send_packet(user_id, &p);
+}
+
+void send_attack_packet(int user_id)
+{
+    sc_packet_attack p;
+    p.id = user_id;
+    p.size = sizeof(sc_packet_attack);
+    p.type = SC_PACKET_ATTACK;
+
+    p.hp = g_clients[user_id].m_shp;
+
+    send_packet(user_id, &p);
 }
 
 void send_login_ok_packet(int user_id)
@@ -266,13 +296,13 @@ void random_move_npc(int id)
     {
         if (id == i) continue;
         if (g_clients[i].m_status != ST_ACTIVE) continue;
-        if (true == is_near(id, i))
+        /*if (true == is_near(id, i))
         {
-            new_viewList.insert(i);
-        }
+        }*/
 
         if (true == is_near(i, id))
         {
+            new_viewList.insert(i);
             g_clients[i].m_cl.lock();
             if (0 != g_clients[i].view_list.count(id))
             {
@@ -296,12 +326,13 @@ void random_move_npc(int id)
 
     }
 
-    for (auto pc : new_viewList) {
-        EXOVER* over_ex = new EXOVER;
-        over_ex->id = pc;
-        over_ex->op = OP_NOTIFY;
-        PostQueuedCompletionStatus(g_iocp, 1, id, &over_ex->over);
-    }
+
+    //for (auto pc : new_viewList) {
+    //    EXOVER* over_ex = new EXOVER;
+    //    over_ex->id = pc;
+    //    over_ex->op = OP_NOTIFY;
+    //    PostQueuedCompletionStatus(g_iocp, 1, id, &over_ex->over);
+    //}
 }
 
 void random_move_monster(int id)
@@ -331,13 +362,13 @@ void random_move_monster(int id)
     {
         if (id == i) continue;
         if (g_clients[i].m_status != ST_ACTIVE) continue;
-        if (true == is_near(id, i))
+       /* if (true == is_near(id, i))
         {
-            new_viewList.insert(i);
-        }
+        }*/
 
         if (true == is_near(i, id))
         {
+            new_viewList.insert(i);
             g_clients[i].m_cl.lock();
             if (0 != g_clients[i].view_list.count(id))
             {
@@ -359,14 +390,21 @@ void random_move_monster(int id)
             else g_clients[i].m_cl.unlock();
         }
 
+        if (g_clients[id].m_isFighter && is_near_Monster(i, id))
+        {
+            g_clients[id].Attack(i);
+            send_attack_packet(i);
+        }
     }
 
-    for (auto pc : new_viewList) {
-        EXOVER* over_ex = new EXOVER;
-        over_ex->id = pc;
-        over_ex->op = OP_NOTIFY_MONSTER;
-        PostQueuedCompletionStatus(g_iocp, 1, id, &over_ex->over);
-    }
+
+
+    //for (auto pc : new_viewList) {
+    //    EXOVER* over_ex = new EXOVER;
+    //    over_ex->id = pc;
+    //    over_ex->op = OP_NOTIFY_MONSTER;
+    //    PostQueuedCompletionStatus(g_iocp, 1, id, &over_ex->over);
+    //}
 }
 
 void do_attack(int user_id)
@@ -376,7 +414,14 @@ void do_attack(int user_id)
     {
         if (is_near_Monster(user_id, i))
         {
-            g_clients[i].Attack(i);
+            g_clients[user_id].Attack(i);
+            if (g_clients[user_id].m_bisLevelUp)
+            {
+                // 레벨업 패킷
+                if (g_clients[i].m_isFighter == false)g_clients[i].m_isFighter = true;
+                send_level_up_packet(user_id);
+                g_clients[user_id].m_bisLevelUp = false;
+            }
         }
     }
 }
@@ -495,7 +540,7 @@ void do_move(int user_id, int direction)
             wake_up_npc(i);
         }
     }
-    for (int i = MAX_USER + NUM_NPC; i < MAX_USER + NUM_NPC + DIVIDE_MONNSTER * 2; ++i)
+    for (int i = MAX_USER + NUM_NPC; i < MAX_USER + NUM_NPC + DIVIDE_MONNSTER * 4; ++i)
     {
         if (true == is_near(user_id, i))
         {
@@ -503,14 +548,7 @@ void do_move(int user_id, int direction)
             wake_up_monster(i);
         }
     }
-    for (int i = MAX_USER + NUM_NPC + DIVIDE_MONNSTER*2; i < MAX_USER + NUM_NPC + MAX_MONSTER; ++i)
-    {
-        if (true == is_near(user_id, i))
-        {
-            new_viewList.insert(i);
-            wake_up_monster(i);
-        }
-    }
+
     //시야에 들어온 객체 처리
     for (int ob : new_viewList)
     {
@@ -579,19 +617,19 @@ void do_move(int user_id, int direction)
         
     }
 
-    if (false == is_npc(user_id))
-    {
-        for (auto& npc : new_viewList)
-        {
-            if (false == is_npc(npc)) continue;
-          
-                EXOVER* ex_over = new EXOVER;
-                ex_over->id = user_id;
-                ex_over->op = OP_NOTIFY;
-                PostQueuedCompletionStatus(g_iocp, 1, npc, &ex_over->over);
-            
-        }
-    }
+    //if (false == is_npc(user_id))
+    //{
+    //    for (auto& npc : new_viewList)
+    //    {
+    //        if (false == is_npc(npc)) continue;
+    //      
+    //            EXOVER* ex_over = new EXOVER;
+    //            ex_over->id = user_id;
+    //            ex_over->op = OP_NOTIFY;
+    //            PostQueuedCompletionStatus(g_iocp, 1, npc, &ex_over->over);
+    //        
+    //    }
+    //}
 }
 
 void enter_game(int user_id, char name[])
@@ -861,6 +899,9 @@ void worker_thread()
                 nc.x = rand() % WORLD_WIDTH;
                 nc.y = rand() % WORLD_HEIGHT;
 
+                nc.m_iFirstX = nc.x;
+                nc.m_iFirstY = nc.y;
+
                 CreateIoCompletionPort(reinterpret_cast<HANDLE>(c_socket), g_iocp, user_id, 0);
                 DWORD flags = 0;
                 int ret;
@@ -924,21 +965,21 @@ void worker_thread()
             break;
         case OP_NOTIFY:
         {
-            g_clients[key].m_cl.lock();//
-            lua_getglobal(g_clients[key].L, "event_player_move");
-            lua_pushnumber(g_clients[key].L, exover->id);
-            lua_pcall(g_clients[key].L, 1, 1, 0);
-            g_clients[key].m_cl.unlock();//
+            //g_clients[key].m_cl.lock();//
+            //lua_getglobal(g_clients[key].L, "event_player_move");
+            //lua_pushnumber(g_clients[key].L, exover->id);
+            //lua_pcall(g_clients[key].L, 1, 1, 0);
+           // g_clients[key].m_cl.unlock();//
             delete exover;
         }
         break;
         case OP_NPC:
         {
-            g_clients[key].m_cl.lock();//
-            lua_getglobal(g_clients[key].L, "say_good_bye");
-            lua_pushnumber(g_clients[key].L, exover->id);
-            lua_pcall(g_clients[key].L, 1, 0, 0);
-            g_clients[key].m_cl.unlock();//
+            //g_clients[key].m_cl.lock();//
+            //lua_getglobal(g_clients[key].L, "say_good_bye");
+            //lua_pushnumber(g_clients[key].L, exover->id);
+            //lua_pcall(g_clients[key].L, 1, 0, 0);
+            //g_clients[key].m_cl.unlock();//
             delete exover;
         }
         break;
@@ -1020,14 +1061,20 @@ void initialize_Monster()
 {
     for (int type = 0; type < 4; ++type)
     {
-        for (int i = MAX_USER + NUM_NPC; i < MAX_USER + NUM_NPC + (DIVIDE_MONNSTER * (type+1)); ++i)
+        for (int i = MAX_USER + NUM_NPC+(DIVIDE_MONNSTER * (type)); i < MAX_USER + NUM_NPC + (DIVIDE_MONNSTER * (type+1)); ++i)
         {
+            if (type >= 2)
+            {
+                g_clients[i].m_isFighter = true;
+            }
             g_clients[i].x = rand() % WORLD_WIDTH;
             g_clients[i].y = rand() % WORLD_HEIGHT;
             g_clients[i].m_id = i;
             g_clients[i].m_status = ST_SLEEP;
-            g_clients[i].m_Monster_level = i+1;
-            g_clients[i].m_shp += 10*i;
+            g_clients[i].m_Monster_level = type;
+
+            g_clients[i].m_shp += 10*type;
+
             g_clients[i].m_sAttack_Damage += 2;
             g_clients[i].m_monster_exp = g_clients[i].m_Monster_level * g_clients[i].m_Monster_level * 2;
         }
