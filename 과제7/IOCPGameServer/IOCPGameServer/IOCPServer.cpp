@@ -62,6 +62,12 @@ void timer_worker()
                     over->op = OP_RANDOM;
                     PostQueuedCompletionStatus(g_iocp, 1, ev.obj_id, &over->over);
                 }
+                if (ev.event_id == OP_RANDOM_MONSTER)
+                {
+                    EXOVER* over = new EXOVER();
+                    over->op = OP_RANDOM_MONSTER;
+                    PostQueuedCompletionStatus(g_iocp, 1, ev.obj_id, &over->over);
+                }
             }
             else break;
         }
@@ -77,6 +83,15 @@ void wake_up_npc(int id)
     if (CAS((int*)(&g_clients[id].m_status), exp, ST_ACTIVE))
     {
         add_timer(id, OP_RANDOM, system_clock::now() + 1s);
+    }
+}
+
+void wake_up_monster(int id) {
+    // 공부
+    int exp = ST_SLEEP;
+    if (CAS((int*)(&g_clients[id].m_status), exp, ST_ACTIVE))
+    {
+        add_timer(id, OP_RANDOM_MONSTER, system_clock::now() + 1s);
     }
 }
 
@@ -109,7 +124,7 @@ void Change_Sector(int user_id)
 
 bool is_npc(int p1)
 {
-    return p1 >= MAX_USER && p1 < MAX_USER + NUM_NPC;
+    return (p1 >= MAX_USER && p1 < MAX_USER + NUM_NPC);
 }
 
 bool is_Monster(int p1)
@@ -252,7 +267,6 @@ void random_move_npc(int id)
         if (true == is_near(id, i))
         {
             new_viewList.insert(i);
-            //wake_up_npc(i);
         }
 
         if (true == is_near(i, id))
@@ -284,6 +298,71 @@ void random_move_npc(int id)
         EXOVER* over_ex = new EXOVER;
         over_ex->id = pc;
         over_ex->op = OP_NOTIFY;
+        PostQueuedCompletionStatus(g_iocp, 1, id, &over_ex->over);
+    }
+}
+
+void random_move_monster(int id)
+{
+    unordered_set <int> old_viewList;
+    for (int i = 0; i < MAX_USER; ++i) {
+        if (ST_ACTIVE != g_clients[i].m_status) continue;
+        if (true == is_near(id, i)) old_viewList.insert(i);
+    }
+
+    int x = g_clients[id].x;
+    int y = g_clients[id].y;
+
+    switch (rand() % 4)
+    {
+    case 0: if (x > 0)x--; break;
+    case 1: if (x < WORLD_WIDTH - 1)x++; break;
+    case 2: if (y > 0)y--; break;
+    case 3: if (y < WORLD_HEIGHT - 1)y++; break;
+    }
+
+    g_clients[id].x = x;
+    g_clients[id].y = y;
+
+    unordered_set<int> new_viewList;
+    for (int i = 0; i < MAX_USER; ++i)
+    {
+        if (id == i) continue;
+        if (g_clients[i].m_status != ST_ACTIVE) continue;
+        if (true == is_near(id, i))
+        {
+            new_viewList.insert(i);
+        }
+
+        if (true == is_near(i, id))
+        {
+            g_clients[i].m_cl.lock();
+            if (0 != g_clients[i].view_list.count(id))
+            {
+                g_clients[i].m_cl.unlock();
+                send_move_packet(i, id);
+            }
+            else {
+                g_clients[i].m_cl.unlock();
+                send_enter_packet(i, id);
+            }
+        }
+        else {
+            g_clients[i].m_cl.lock();
+            if (0 != g_clients[i].view_list.count(id))
+            {
+                g_clients[i].m_cl.unlock();
+                send_leave_packet(i, id);
+            }
+            else g_clients[i].m_cl.unlock();
+        }
+
+    }
+
+    for (auto pc : new_viewList) {
+        EXOVER* over_ex = new EXOVER;
+        over_ex->id = pc;
+        over_ex->op = OP_NOTIFY_MONSTER;
         PostQueuedCompletionStatus(g_iocp, 1, id, &over_ex->over);
     }
 }
@@ -379,7 +458,11 @@ void do_move(int user_id, int direction)
             for (auto& i : vSec)
             {
                 if (user_id == i) continue;
-                if (ST_SLEEP == g_clients[i].m_status) wake_up_npc(g_clients[i].m_id);
+                if (ST_SLEEP == g_clients[i].m_status)
+                {
+                    wake_up_npc(g_clients[i].m_id);
+                    wake_up_monster(g_clients[i].m_id);
+                }
                 if (g_clients[i].m_status != ST_ACTIVE) continue;
 
                 if (true == is_near(user_id, i))
@@ -404,6 +487,7 @@ void do_move(int user_id, int direction)
         if (true == is_near(user_id, i))
         {
             new_viewList.insert(i);
+            wake_up_monster(i);
         }
     }
     //시야에 들어온 객체 처리
@@ -564,7 +648,10 @@ void enter_game(int user_id, char name[])
                 if (true == is_near(user_id, i))
                 {
                     if (ST_SLEEP == g_clients[i].m_status)
+                    {
                         wake_up_npc(i);
+                        wake_up_monster(i);
+                    }
 
                     if (!is_npc(i))
                     {
@@ -796,6 +883,24 @@ void worker_thread()
 
         }
         break;
+        case OP_RANDOM_MONSTER:
+        {
+            random_move_monster(user_id); bool keep_alive = false;
+            //active인 플레이어가 주변에 있으면 계속 깨워두기
+            for (int i = 0; i < MAX_USER; ++i)
+                if (true == is_near(user_id, i))
+                    if (ST_ACTIVE == g_clients[i].m_status)
+                    {
+                        keep_alive = true; break;
+                    }
+            if (true == keep_alive) add_timer(user_id, OP_RANDOM_MONSTER, system_clock::now() + 1s);
+            else g_clients[user_id].m_status = ST_SLEEP;
+            //주위에 이제 아무도 없으면 SLEEP으로 멈춰두기 
+            delete exover;
+        }
+        break;
+        case OP_NOTIFY_MONSTER:
+            break;
         case OP_NOTIFY:
         {
             g_clients[key].m_cl.lock();//
@@ -897,7 +1002,7 @@ void initialize_Monster()
         g_clients[i].x = rand() % WORLD_WIDTH;
         g_clients[i].y = rand() % WORLD_HEIGHT;
         g_clients[i].m_id = i;
-        g_clients[i].m_status = ST_FREE;
+        g_clients[i].m_status = ST_SLEEP;
     }
 }
 

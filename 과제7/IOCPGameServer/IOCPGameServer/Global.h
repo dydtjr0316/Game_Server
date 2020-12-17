@@ -3,7 +3,7 @@
 SOCKET l_socket;
 HANDLE g_iocp;
 
-extern CClient g_clients[MAX_USER + NUM_NPC];
+extern CClient g_clients[MAX_USER + NUM_NPC + MAX_MONSTER];
 extern CMonster g_Monsters[MAX_MONSTER];
 
 // mutex
