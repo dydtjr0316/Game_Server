@@ -174,10 +174,12 @@ void ProcessPacket(char* ptr)
 			avatar.show();
 		}
 		else {
-			if (id < NPC_ID_START)
-				npcs[id] = OBJECT{ *pieces, 64*2, 0, 64, 64 };
-			else
+			if (id < MAX_USER)
+				npcs[id] = OBJECT{ *pieces, 64 * 2, 0, 64, 64 };
+			else if (id >= NUM_NPC && id < MAX_USER + NUM_NPC)
 				npcs[id] = OBJECT{ *pieces, 0, 0, 64, 64 };
+			else 
+				npcs[id] = OBJECT{ *pieces, 64, 64, 64, 64 };
 
 			strcpy_s(npcs[id].name, my_packet->name);
 			npcs[id].set_name(my_packet->name);
