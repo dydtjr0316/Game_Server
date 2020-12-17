@@ -37,7 +37,7 @@ void CClient::Attack(int monsterID)
 void CClient::Kill_Monster(int monsterID)
 {
 	cout << "╬с ав╬З╤Л" << endl;
-	m_iexp += 20;
+	m_iexp += g_clients[monsterID].m_monster_exp;
 
 	if (m_iexp >= m_iMax_exp)
 	{

@@ -24,6 +24,7 @@ public: // 새로 추가 1216
 	int	  m_iMax_exp = 100;
 	short m_sHp_Regen = (m_shp/10); // 체젠
 	short m_sAttack_Damage = 5;
+	short m_monster_exp = 2;
 
 public:
 	// server
@@ -36,7 +37,7 @@ public:
 	int		m_id;
 	int   m_prev_size;
 	int m_iclinet_time;
-	short m_Monster_level = 1;
+	short m_Monster_level =0 ;
 	// short
 	short x, y;
 	// char

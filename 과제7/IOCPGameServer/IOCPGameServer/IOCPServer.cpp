@@ -91,6 +91,8 @@ void wake_up_monster(int id) {
     int exp = ST_SLEEP;
     if (CAS((int*)(&g_clients[id].m_status), exp, ST_ACTIVE))
     {
+        if(id > MAX_USER + NUM_NPC + DIVIDE_MONNSTER * 2
+            && id<= MAX_USER + NUM_NPC + MAX_MONSTER)
         add_timer(id, OP_RANDOM_MONSTER, system_clock::now() + 1s);
     }
 }
@@ -493,8 +495,15 @@ void do_move(int user_id, int direction)
             wake_up_npc(i);
         }
     }
-
-    for (int i = MAX_USER + NUM_NPC; i < MAX_USER + NUM_NPC + MAX_MONSTER; ++i)
+    for (int i = MAX_USER + NUM_NPC; i < MAX_USER + NUM_NPC + DIVIDE_MONNSTER * 2; ++i)
+    {
+        if (true == is_near(user_id, i))
+        {
+            new_viewList.insert(i);
+            wake_up_monster(i);
+        }
+    }
+    for (int i = MAX_USER + NUM_NPC + DIVIDE_MONNSTER*2; i < MAX_USER + NUM_NPC + MAX_MONSTER; ++i)
     {
         if (true == is_near(user_id, i))
         {
@@ -1017,7 +1026,10 @@ void initialize_Monster()
             g_clients[i].y = rand() % WORLD_HEIGHT;
             g_clients[i].m_id = i;
             g_clients[i].m_status = ST_SLEEP;
-            g_clients[i].m_Monster_level = i;
+            g_clients[i].m_Monster_level = i+1;
+            g_clients[i].m_shp += 10*i;
+            g_clients[i].m_sAttack_Damage += 2;
+            g_clients[i].m_monster_exp = g_clients[i].m_Monster_level * g_clients[i].m_Monster_level * 2;
         }
     }
 }
