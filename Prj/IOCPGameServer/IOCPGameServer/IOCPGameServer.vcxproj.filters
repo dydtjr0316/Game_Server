@@ -22,6 +22,9 @@
     <Filter Include="03DataBase">
       <UniqueIdentifier>{0e96896a-13f2-4278-9d36-c0522213a953}</UniqueIdentifier>
     </Filter>
+    <Filter Include="00Main\00NetMgr">
+      <UniqueIdentifier>{c957209d-923a-4400-8257-e8d59fc224a6}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="protocol.h">
@@ -60,6 +63,9 @@
     <ClInclude Include="CDataBase.h">
       <Filter>03DataBase</Filter>
     </ClInclude>
+    <ClInclude Include="CNetMgr.h">
+      <Filter>00Main\00NetMgr</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="IOCPServer.cpp">
@@ -70,6 +76,9 @@
     </ClCompile>
     <ClCompile Include="CDataBase.cpp">
       <Filter>03DataBase</Filter>
+    </ClCompile>
+    <ClCompile Include="CNetMgr.cpp">
+      <Filter>00Main\00NetMgr</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

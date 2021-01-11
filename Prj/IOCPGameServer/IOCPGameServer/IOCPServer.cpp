@@ -4,21 +4,15 @@
 #include "CDataBase.h"
 
 
-__m128i add;
-__m128i add2;
-__m128i mul;
-__m128i x;
-__m128i y;
+__m128 pppp;
+__m128 aaaa;
+__m128 res;
+__m128 mul_res;
+__m128 add_res;
 
-__m128i resultadd;
-__m128i resultx;
-__m128i resulty;
+__declspec(align(16)) float pointX[2];
+__declspec(align(16)) float pointY[2];
 
-
-__declspec(align(16)) int pointX[2];
-__declspec(align(16)) int pointY[2];
-__declspec(align(16)) int result[2];
-__declspec(align(16)) int finalresult;
 CDataBase g_DataBase;
 
 void show_error() {
@@ -160,9 +154,11 @@ bool is_near(int p1, int p2)
     dist += (g_clients[p1].y - g_clients[p2].y) * (g_clients[p1].y - g_clients[p2].y);
 
     //cout << "거리 -> " << dist << endl;
+    // return dist <= (VIEW_LIMIT * VIEW_LIMIT);
+
+    // 
 
 
-    return dist <= (VIEW_LIMIT * VIEW_LIMIT);
 }
 
 //bool is_near(int p1, int p2)
@@ -564,6 +560,7 @@ void do_move(int user_id, int direction)
                 if (user_id == i) continue;
                 if (ST_SLEEP == g_clients[i].m_status)
                 {
+                    // 이부분 왜 해놓은거지 슈발
                     wake_up_npc(g_clients[i].m_id);
                     wake_up_monster(g_clients[i].m_id);
                 }
