@@ -191,9 +191,9 @@ void ProcessPacket(char* ptr)
 		npcs[g_myid].exp = my_packet->exp;
 			 
 		npcs[g_myid].iMax_exp = my_packet->iMax_exp;
-		npcs[g_myid].sHp_Regen = my_packet->sHp_Regen;
-		npcs[g_myid].Attack_Damage = my_packet->Attack_Damage;
 
+		npcs[g_myid].Attack_Damage = my_packet->Attack_Damage;
+		cout << g_myid << endl;
 
 	}
 	break;

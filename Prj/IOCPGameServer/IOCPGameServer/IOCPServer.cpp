@@ -2,7 +2,7 @@
 #include "CClient.h"
 #include "Global.h"
 #include "CDataBase.h"
-
+#include<unordered_map>
 
 __m128 pppp;
 __m128 aaaa;
@@ -62,11 +62,13 @@ void timer_worker()
                 timer_lock.lock();
                 timer_queue.pop();
                 timer_lock.unlock();
+                cout << "timer worker -> objid -> " << ev.obj_id << endl;
 
                 if (ev.event_id == OP_RANDOM)
                 {
                     EXOVER* over = new EXOVER();
                     over->op = OP_RANDOM;
+                    unordered_map<int, int> m;
                     PostQueuedCompletionStatus(g_iocp, 1, ev.obj_id, &over->over);
                 }
                 if (ev.event_id == OP_RANDOM_MONSTER)
@@ -85,6 +87,9 @@ void timer_worker()
 void wake_up_npc(int id)
 {
     // 공부
+    //cout << " -> " << id << endl;
+    cout << "wakeup npc-> " << id << endl;
+
     int exp = ST_SLEEP;
     //if(true == atomic_compare_exchange_strong((atomic_int*)(&g_clients[id].m_status), &exp, (int)ST_ACTIVE))
     if (CAS((int*)(&g_clients[id].m_status), exp, ST_ACTIVE))
@@ -95,6 +100,7 @@ void wake_up_npc(int id)
 
 void wake_up_monster(int id) {
     // 공부
+    cout << "wakeup monster-> " << id << endl;
     int exp = ST_SLEEP;
     if (CAS((int*)(&g_clients[id].m_status), exp, ST_ACTIVE))
     {
@@ -149,12 +155,13 @@ bool is_near_Monster(int p1, int p2)
 }
 bool is_near(int p1, int p2)
 {
+   // cout << "1 -> " << p1 << " , 2 -> " << p2 << endl;
     // 이 함수는 굉장히 자주 불리는 함수이다. -> sqrtf(), pawf() 이런 것들 자제하자!
     int dist = (g_clients[p1].x - g_clients[p2].x) * (g_clients[p1].x - g_clients[p2].x);
     dist += (g_clients[p1].y - g_clients[p2].y) * (g_clients[p1].y - g_clients[p2].y);
 
     //cout << "거리 -> " << dist << endl;
-    // return dist <= (VIEW_LIMIT * VIEW_LIMIT);
+     return dist <= (VIEW_LIMIT * VIEW_LIMIT);
 
     // 
 
@@ -194,6 +201,7 @@ bool is_near(int p1, int p2)
 
 void send_packet(int user_id, void* p)
 {
+    //cout << " -> " << user_id << endl;
     unsigned char* buf = reinterpret_cast<unsigned char*>(p);
 
     CClient& u = g_clients[user_id];
@@ -265,7 +273,7 @@ void send_login_ok_packet(int user_id)
     p.y = g_clients[user_id].y;
 
     p.iMax_exp = g_clients[user_id].m_iMax_exp;
-    p.sHp_Regen = g_clients[user_id].m_sHp_Regen;
+   
     p.Attack_Damage = g_clients[user_id].m_sAttack_Damage;
 
     send_packet(user_id, &p);
@@ -298,6 +306,8 @@ void send_leave_packet(int user_id, int o_id)
 
 void send_move_packet(int user_id, int mover)
 {
+   // cout << "mover -> " << mover << endl;
+   // cout << "user -> " << user_id << endl << endl;
     sc_packet_move p;
     p.id = mover;
     p.size = sizeof(p);
@@ -337,10 +347,6 @@ void random_move_npc(int id)
     {
         if (id == i) continue;
         if (g_clients[i].m_status != ST_ACTIVE) continue;
-        /*if (true == is_near(id, i))
-        {
-        }*/
-
         if (true == is_near(i, id))
         {
             new_viewList.insert(i);
@@ -450,6 +456,7 @@ void random_move_monster(int id)
 
 void do_attack(int user_id)
 {
+    //cout << " -> " << user_id << endl;
     // 근처 한칸에 있는 몬스터인가?
     for (int i = NUM_NPC + MAX_USER; i < NUM_NPC + MAX_USER + MAX_MONSTER;++i)
     {
@@ -467,8 +474,9 @@ void do_attack(int user_id)
     }
 }
 
-void do_move(int user_id, int direction)
+void do_move(int user_id, int direction) // 전부
 {
+   // cout << " -> " << user_id << endl;
     CClient& u = g_clients[user_id];
 
     int x = u.x;
@@ -599,7 +607,7 @@ void do_move(int user_id, int direction)
         {
             g_clients[user_id].view_list.insert(ob);
             send_enter_packet(user_id, ob);
-
+            //cout << " ob -> " <<ob <<endl;
             if (false == is_npc(ob)) // npc라면 검사안해도되는 부분
             {
                 //상대방 viewlist에 내가 없으면
@@ -676,6 +684,7 @@ void do_move(int user_id, int direction)
 
 void enter_game(int user_id, char name[])
 {
+    //cout << "enter_game -> "<<user_id << endl;
     g_clients[user_id].m_cl.lock();
     strcpy_s(g_clients[user_id].m_name, name);
     g_clients[user_id].m_cl.unlock();
@@ -817,6 +826,7 @@ void initialize_clients()
 
 void disconnect(int user_id)
 {
+    //cout << "dis -> " << user_id << endl;
     g_clients[user_id].m_status = ST_ALLOC;
 
     send_leave_packet(user_id, user_id);
@@ -846,6 +856,7 @@ void disconnect(int user_id)
     g_clients[user_id].m_cl.unlock();
 
     closesocket(g_clients[user_id].m_s);
+  // closesocket(g_clients[user_id].m_s);
     g_clients[user_id].m_s = 0;
 
     g_DataBase.UpSert_DB(g_clients[user_id]);
@@ -855,6 +866,8 @@ void recv_packet_construct(int user_id, int io_byte)
 {
     CClient& cu = g_clients[user_id];
     EXOVER& r_o = cu.m_recv_over;
+
+    //cout << user_id << endl;
 
     int rest_byte = io_byte;
     char* p = r_o.io_buf;
@@ -888,8 +901,10 @@ void worker_thread()
         GetQueuedCompletionStatus(g_iocp, &io_byte, &key, &over, INFINITE);
 
         EXOVER* exover = reinterpret_cast<EXOVER*>(over);
+        //cout << static_cast<int>(key) << endl;
         int user_id = static_cast<int>(key);
         CClient& cl = g_clients[user_id];
+
 
         switch (exover->op) {
         case OP_RECV:
@@ -1080,6 +1095,10 @@ int API_RunAway(lua_State* L)
     EXOVER* over = new EXOVER;
     over->id = user_id;
     over->op = OP_NPC;
+
+    int t[2];
+
+
     PostQueuedCompletionStatus(g_iocp, 1, my_id, &over->over);
     return 0;
 }

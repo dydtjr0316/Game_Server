@@ -22,14 +22,14 @@ void CClient::Attack(int monsterID)
 	if (g_clients[monsterID].m_shp > 0) {
 		if (monsterID < MAX_USER)
 		{
-			cout << "공격당함" << endl;
-			cout << "내 체력 "<<g_clients[monsterID].m_shp << endl<<endl;
+			/*cout << "공격당함" << endl;
+			cout << "내 체력 "<<g_clients[monsterID].m_shp << endl<<endl;*/
 		}
 		else
 		{
 			{
-				cout << "공격함" << endl;
-				cout << "상대 체력 " << g_clients[monsterID].m_shp << endl<<endl;
+				/*cout << "공격함" << endl;
+				cout << "상대 체력 " << g_clients[monsterID].m_shp << endl<<endl;*/
 			}
 		}
 

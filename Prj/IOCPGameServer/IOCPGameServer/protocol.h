@@ -16,7 +16,7 @@ constexpr auto MAX_BUF_SIZE = 1024;
 constexpr int SERVER_PORT = 3500;
 constexpr int MAX_ID_LEN = 10;
 constexpr int MAX_USER = 3000;
-constexpr int MAX_MONSTER = 5000;
+constexpr int MAX_MONSTER = 10000;
 constexpr int DIVIDE_MONNSTER = MAX_MONSTER / 4;
 constexpr int WORLD_WIDTH = 800;
 constexpr int WORLD_HEIGHT = 800;
@@ -24,7 +24,7 @@ constexpr int MAX_STR_LEN = 100;
 
 constexpr int VIEW_LIMIT = 7;				// 시야 반지름, 상대방과 사이에 6개의 타일이 있어도 보여야 함.
 
-constexpr int NUM_NPC = 3000;
+constexpr int NUM_NPC = 100;
 
 #pragma pack (push, 1)
 
@@ -53,26 +53,147 @@ constexpr char CS_TELEORT = 5;				// 부하 테스트용 동접 테스트를 위해 텔러포트로
 constexpr unsigned char O_PLAYER = 0;
 constexpr unsigned char O_NPC = 1;
 
+//
+//struct sc_packet_login_ok {
+//	char size;
+//	char type;
+//	int  id;
+//	short x, y;
+//	short hp;
+//	short level;
+//	int   exp;
+//
+//	int	  iMax_exp;
+//	short	  sHp_Regen;
+//	short Attack_Damage;
+//};
+//
+//struct sc_packet_move {
+//	char size;
+//	char type;
+//	int id;
+//	short x, y;
+//	int move_time;
+//};
+//
+//struct sc_packet_enter {
+//	char size;
+//	char type;
+//	int  id;
+//	char name[MAX_ID_LEN];
+//	char o_type;
+//	short x, y;
+//};
+//
+//struct sc_packet_leave {
+//	char size;
+//	char type;
+//	int  id;
+//};
+//
+//struct sc_packet_attack {
+//	char size;
+//	char type;
+//	int  id;
+//
+//	short hp;
+//};
+//
+//struct sc_packet_level_up {
+//	char size;
+//	char type;
+//	int  id;
+//
+//	short hp;
+//	short level;
+//	int   exp;
+//	int max_exp;
+//	short attack_damage;
+//};
+//
+//struct sc_packet_chat {
+//	char  size;
+//	char  type;
+//	int	  id;			// teller
+//	char  message[MAX_STR_LEN];
+//};
+//
+//struct sc_packet_login_fail {
+//	char  size;
+//	char  type;
+//	int	  id;
+//	char  message[MAX_STR_LEN];
+//};
+//
+//struct sc_packet_stat_change {
+//	char size;
+//	char type;
+//	int  id;
+//	short hp;
+//	short level;
+//	int   exp;
+//};
+//
+//
+//struct cs_packet_login {
+//	char  size;
+//	char  type;
+//	char  name[MAX_ID_LEN];
+//};
+//
+//
+//
+//struct cs_packet_move {
+//	char  size;
+//	char  type;
+//	char  direction;
+//	int	  move_time;
+//};
+//
+//struct cs_packet_attack {
+//	char	size;
+//	char	type;
+//};
+//
+//struct cs_packet_chat {
+//	char	size;
+//	char	type;
+//	char	message[MAX_STR_LEN];
+//};
+//
+//struct cs_packet_logout {
+//	char	size;
+//	char	type;
+//};
+//
+//struct cs_packet_teleport {
+//	char size;
+//	char type;
+//	short x, y;
+//};
+//
+//#pragma pack (pop)
 
+// 추후 수정, Z값 포함 
 struct sc_packet_login_ok {
 	char size;
 	char type;
+
 	int  id;
-	short x, y;
-	short hp;
-	short level;
+	int x, y, z;
+	int hp;
+	int level;
 	int   exp;
 
 	int	  iMax_exp;
-	short	  sHp_Regen;
-	short Attack_Damage;
+	int Attack_Damage;
 };
 
 struct sc_packet_move {
 	char size;
 	char type;
 	int id;
-	short x, y;
+	int x, y, z;
 	int move_time;
 };
 
@@ -82,7 +203,7 @@ struct sc_packet_enter {
 	int  id;
 	char name[MAX_ID_LEN];
 	char o_type;
-	short x, y;
+	int x, y;
 };
 
 struct sc_packet_leave {
@@ -96,7 +217,7 @@ struct sc_packet_attack {
 	char type;
 	int  id;
 
-	short hp;
+	int hp;
 };
 
 struct sc_packet_level_up {
@@ -104,11 +225,12 @@ struct sc_packet_level_up {
 	char type;
 	int  id;
 
-	short hp;
-	short level;
+	int hp;
+	int max_hp;
+	int level;
 	int   exp;
 	int max_exp;
-	short attack_damage;
+	int attack_damage;
 };
 
 struct sc_packet_chat {
@@ -129,8 +251,8 @@ struct sc_packet_stat_change {
 	char size;
 	char type;
 	int  id;
-	short hp;
-	short level;
+	int hp;
+	int level;
 	int   exp;
 };
 
@@ -169,8 +291,7 @@ struct cs_packet_logout {
 struct cs_packet_teleport {
 	char size;
 	char type;
-	short x, y;
+	int x, y;
 };
 
 #pragma pack (pop)
-
