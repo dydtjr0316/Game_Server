@@ -44,7 +44,6 @@ class OBJECT {
 private:
 	bool m_showing;
 	sf::Sprite m_sprite;
-
 	char m_mess[MAX_STR_LEN];
 	high_resolution_clock::time_point m_time_out;
 	sf::Text m_text;
@@ -564,9 +563,6 @@ int main()
 
 		window.clear();
 		client_main();
-
-
-
 		window.display();
 	}
 	client_finish();
